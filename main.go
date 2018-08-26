@@ -1,20 +1,36 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
+	"log"
 	"net/http"
+	"net/url"
 )
 
-type anything int
+type hotdog int
 
-func (a anything) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprintln(w, "<h1>this is anything<h1>")
-	if err := r.ParseForm(); err != nil {
-		fmt.Println(err)
+func (m hotdog) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	err := req.ParseForm()
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	tpl.ExecuteTemplate(w, "index.gohtml", r.Form)
+	data := struct {
+		Method        string
+		URL           *url.URL
+		Submissions   map[string][]string
+		Header        http.Header
+		Host          string
+		ContentLength int64
+	}{
+		req.Method,
+		req.URL,
+		req.Form,
+		req.Header,
+		req.Host,
+		req.ContentLength,
+	}
+	tpl.ExecuteTemplate(w, "index.gohtml", data)
 }
 
 var tpl *template.Template
@@ -24,8 +40,6 @@ func init() {
 }
 
 func main() {
-	fmt.Println("Serve...")
-	var an anything
-
-	http.ListenAndServe(":8080", an)
+	var d hotdog
+	http.ListenAndServe(":8080", d)
 }
