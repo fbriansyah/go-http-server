@@ -1,18 +1,38 @@
 package main
 
 import (
-	"fmt"
+	"html/template"
+	"log"
 	"net/http"
 )
 
+var tmpl *template.Template
+
+type person struct {
+	FirstName  string
+	LastName   string
+	Subscribed bool
+}
+
+func init() {
+	tmpl = template.Must(template.ParseGlob("templates/*"))
+}
+
 func main() {
-	http.HandleFunc("/", dog)
+	http.HandleFunc("/", foo)
 	http.Handle("/favicon.ico", http.NotFoundHandler())
 
 	http.ListenAndServe(":8080", nil)
 }
 
-func dog(w http.ResponseWriter, req *http.Request) {
-	fmt.Println(req.URL)
-	fmt.Fprintln(w, "Lihat di terminal")
+func foo(w http.ResponseWriter, req *http.Request) {
+	f := req.FormValue("first")
+	l := req.FormValue("last")
+	s := req.FormValue("subscribe") == "on"
+
+	if err := tmpl.ExecuteTemplate(w, "index.gohtml", person{f, l, s}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Fatalln(err)
+	}
+
 }
